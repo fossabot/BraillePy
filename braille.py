@@ -31,7 +31,7 @@ class InvalidBrailleType(BaseBrailleException):
 class InvalidRowNumber(BaseBrailleException):
 	pass
 
-class InvalidBrailleCodepoint(BaseBrailleException):
+class InvalidBrailleCodePoint(BaseBrailleException):
 	pass
 
 class Braille(object):
@@ -85,7 +85,7 @@ class Braille(object):
 		if (BRAILLECHAROFFSET + value) in range(BRAILLECHAROFFSET, (BRAILLECHARMAX + 1)):
 			return chr((BRAILLECHAROFFSET + value))
 		else:
-			raise InvalidBrailleCodepoint(f"{(BRAILLECHAROFFSET + value)} is not Braille codepoint!")
+			raise InvalidBrailleCodePoint(f"{(BRAILLECHAROFFSET + value)} is not Braille codepoint!")
 	
 	def __repr__(self) -> str:
 		return f"Braille({self.dots_map})"
@@ -161,9 +161,9 @@ def _VALUE_TO_BRAILLE(BRAILLE: Union[int, str]) -> list:
 	elif isinstance(BRAILLE, str):
 		val = ord(BRAILLE)
 	else:
-		raise InvalidBrailleCodepoint("This is not Braille character")
+		raise InvalidBrailleCodePoint("This is not Braille character")
 	if val not in range(BRAILLECHAROFFSET, BRAILLECHARMAX + 1):
-		raise InvalidBrailleCodepoint("This is not Braille character")
+		raise InvalidBrailleCodePoint("This is not Braille character")
 	temp = []
 	value = val - BRAILLECHAROFFSET
 	for i in range(7, -1, -1):
