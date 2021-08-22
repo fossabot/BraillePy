@@ -21,6 +21,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    py_modules=["braille", "character"],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
     install_requires = ['typing;python_version<"3.5"'],
