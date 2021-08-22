@@ -1,9 +1,9 @@
-import setuptools
+from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+setup(
     name="braille",
     version="1.0.0",
     author="Luka Mamukashvili",
@@ -22,7 +22,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     py_modules=["braille"],
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src", include=["character"]),
+    packages=find_packages(),
     install_requires = ['typing;python_version<"3.5"'],
 )
