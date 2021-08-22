@@ -20,7 +20,7 @@ BRAILLECHAROFFSET: int = 0x2800
 BRAILLECHARMAX: int = 0x28ff
 BRAILLECHARRANGE: list[int] = [u for u in range(BRAILLECHAROFFSET, BRAILLECHARMAX + 1)]
 
-__all__ = ["b2s", "v2b", "Braille"]
+__all__ = ["b2s", "b2v", "b2bm", "v2b", "Braille"]
 
 class BaseBrailleException(Exception):
 	pass
@@ -44,7 +44,7 @@ class Braille(object):
 		if isinstance(value, int) and value in BRAILLECHARRANGE:
 			self.codepoint = value
 			self.character = chr(value)
-			self.dots_map = _VALUE_TO_BRAILLE(value)
+			self.matrix = _VALUE_TO_BRAILLE(value)
 		elif isinstance(value, list):
 			if len(value) not in [3, 4]:
 				raise InvalidBrailleType("Braille Map must have 3 or 4 rows")
@@ -55,13 +55,13 @@ class Braille(object):
 			for row in value:
 				for i in row:
 					i = int(bool(i)) if not isinstance(i, (int, bool)) or i not in [0, 1, False, True] else int(i)
-			self.dots_map = value
-			self.character = _BRAILLE_TO_STRING(self.dots_map)
+			self.matrix = value
+			self.character = _BRAILLE_TO_STRING(self.matrix)
 			self.codepoint = ord(self.character)
 		elif isinstance(value, str):
 			if ord(value) in BRAILLECHARRANGE:
 				self.character = value
-				self.dots_map = _VALUE_TO_BRAILLE(value)
+				self.matrix = _VALUE_TO_BRAILLE(value)
 				self.codepoint = ord(value)
 			else:
 				raise TypeError("Value should be either braille codepoint, braille character or braille map as list")
@@ -70,14 +70,14 @@ class Braille(object):
 		
 	def __str__(self) -> str:
 		x = [
-			self.dots_map[0][0],
-			self.dots_map[1][0],
-			self.dots_map[2][0],
-			self.dots_map[0][1],
-			self.dots_map[1][1],
-			self.dots_map[2][1],
-			self.dots_map[3][0],
-			self.dots_map[3][1]
+			self.matrix[0][0],
+			self.matrix[1][0],
+			self.matrix[2][0],
+			self.matrix[0][1],
+			self.matrix[1][1],
+			self.matrix[2][1],
+			self.matrix[3][0],
+			self.matrix[3][1]
 		]
 		value: number = 0
 		for i in range(len(x)):
@@ -88,7 +88,7 @@ class Braille(object):
 			raise InvalidBrailleCodePoint(f"{(BRAILLECHAROFFSET + value)} is not Braille codepoint!")
 	
 	def __repr__(self) -> str:
-		return f"Braille({self.dots_map})"
+		return f"Braille({self.matrix})"
 	
 	def __add__(self, other: 'Braille') -> 'Braille':
 		if isinstance(other, Braille):
@@ -128,30 +128,34 @@ class Braille(object):
 
 def _BRAILLE_TO_STRING(BRAILLE: Union[Braille, list]) -> str:
 	"""Converts Braille map to character"""
-	if isinstance(BRAILLE, Braille) or isinstance(BRAILLE, Braille) and hasattr(BRAILLE, 'dots_map'):
-		BRAILLE_MAP = BRAILLE.dots_map
+	if isinstance(BRAILLE, Braille) or isinstance(BRAILLE, Braille) and hasattr(BRAILLE, 'matrix'):
+		BRAILLE_MATRIX = BRAILLE.matrix
 	elif isinstance(BRAILLE, list) and len(BRAILLE) in [3, 4] and all([len(i) == 2 for i in BRAILLE]):
 		if len(BRAILLE) == 3:
 			BRAILLE += (0, 0)
-		BRAILLE_MAP = BRAILLE
+		BRAILLE_MATRIX = BRAILLE
 	else:
 		raise TypeError("Value should be either Braille class or braille map as list")
 	lowEndian = [
-		BRAILLE_MAP[0][0],
-		BRAILLE_MAP[1][0],
-		BRAILLE_MAP[2][0],
-		BRAILLE_MAP[0][1],
-		BRAILLE_MAP[1][1],
-		BRAILLE_MAP[2][1],
-		BRAILLE_MAP[3][0],
-		BRAILLE_MAP[3][1]
+		BRAILLE_MATRIX[0][0],
+		BRAILLE_MATRIX[1][0],
+		BRAILLE_MATRIX[2][0],
+		BRAILLE_MATRIX[0][1],
+		BRAILLE_MATRIX[1][1],
+		BRAILLE_MATRIX[2][1],
+		BRAILLE_MATRIX[3][0],
+		BRAILLE_MATRIX[3][1]
 	]
 	value = 0
 	for i in range(8):
 		value += (lowEndian[i] << i)
 	return chr(BRAILLECHAROFFSET + value)
 
-def _VALUE_TO_BRAILLE(BRAILLE: Union[int, str]) -> list:
+def _BRAILLE_TO_BRAILLE_MATRIX(BRAILLE: Braille) -> list:
+	"""Converts Braille class to Braille matrix"""
+	return BRAILLE.matrix
+
+def _VALUE_TO_BRAILLE_MATRIX(BRAILLE: Union[int, str]) -> list:
 	"""
 	Converts Braille character back to list
 	Credits: @xwerswoodx#4332 (Discord)
@@ -181,4 +185,6 @@ def _VALUE_TO_BRAILLE(BRAILLE: Union[int, str]) -> list:
 	]
 
 b2s = _BRAILLE_TO_STRING
-v2b = _VALUE_TO_BRAILLE
+b2v = lambda braille: ord(b2s(braille))
+b2bm = _BRAILLE_TO_BRAILLE_MATRIX
+v2bm = _VALUE_TO_BRAILLE_MATRIX
