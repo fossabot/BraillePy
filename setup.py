@@ -23,6 +23,6 @@ setuptools.setup(
     ],
     py_modules=["braille"],
     package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src", include=["braille", "character"]),
+    packages=setuptools.find_packages(where="src", include=["character"]),
     install_requires = ['typing;python_version<"3.5"'],
 )
