@@ -1,6 +1,6 @@
-#	Braille library for Python
+# 	Braille library for Python
 #    Copyright (C) 2021 UltraStudioLTD
-#	This program is free software: you can redistribute it and/or modify
+# 	This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
@@ -16,175 +16,173 @@
 from __future__ import annotations
 from typing import Union
 
-BRAILLECHAROFFSET: int = 0x2800
-BRAILLECHARMAX: int = 0x28ff
-BRAILLECHARRANGE: list[int] = [u for u in range(BRAILLECHAROFFSET, BRAILLECHARMAX + 1)]
+braille_starting_codepoint: int = 0x2800
+braille_codepoint_end: int = 0x28FF
+braille_codepoint_range: list[int] = [
+    codepoint
+    for codepoint in range(braille_starting_codepoint, braille_codepoint_end + 1)
+]
 
-__all__ = ["b2s", "b2v", "b2bm", "v2b", "Braille"]
+__all__ = [
+    "Braille",
+    "BaseBrailleException",
+    "InvalidBrailleType",
+    "InvalidRowNumber",
+    "InvalidBrailleCodePoint",
+    "matrix2char",
+    "matrix2codepoint",
+    "character2matrix",
+    "codepoint2matrix",
+]
+
 
 class BaseBrailleException(Exception):
-	pass
+    pass
+
 
 class InvalidBrailleType(BaseBrailleException):
-	pass
+    pass
+
 
 class InvalidRowNumber(BaseBrailleException):
-	pass
+    pass
+
 
 class InvalidBrailleCodePoint(BaseBrailleException):
-	pass
+    pass
 
-class Braille(object):
-	def __init__(self, value: Union[list, int, str] = ([
-			[0, 0],
-			[0, 0],
-			[0, 0],
-			[0, 0]
-		] or 0x2800)):
-		if isinstance(value, int) and value in BRAILLECHARRANGE:
-			self.codepoint = value
-			self.character = chr(value)
-			self.matrix = _VALUE_TO_BRAILLE(value)
-		elif isinstance(value, list):
-			if len(value) not in [3, 4]:
-				raise InvalidBrailleType("Braille Map must have 3 or 4 rows")
-			if not all([len(row) == 2 for row in value]):
-				raise InvalidRowNumber("Each row's length should be 2")
-			if len(value) == 3:
-				value += [(0, 0)]
-			for row in value:
-				for i in row:
-					i = int(bool(i)) if not isinstance(i, (int, bool)) or i not in [0, 1, False, True] else int(i)
-			self.matrix = value
-			self.character = _BRAILLE_TO_STRING(self.matrix)
-			self.codepoint = ord(self.character)
-		elif isinstance(value, str):
-			if ord(value) in BRAILLECHARRANGE:
-				self.character = value
-				self.matrix = _VALUE_TO_BRAILLE(value)
-				self.codepoint = ord(value)
-			else:
-				raise TypeError("Value should be either braille codepoint, braille character or braille map as list")
-		else:
-			raise TypeError("Value should be either braille codepoint, braille character or braille map as list")
-		
-	def __str__(self) -> str:
-		x = [
-			self.matrix[0][0],
-			self.matrix[1][0],
-			self.matrix[2][0],
-			self.matrix[0][1],
-			self.matrix[1][1],
-			self.matrix[2][1],
-			self.matrix[3][0],
-			self.matrix[3][1]
-		]
-		value: number = 0
-		for i in range(len(x)):
-			value += (x[int(i)] << int(i))
-		if (BRAILLECHAROFFSET + value) in range(BRAILLECHAROFFSET, (BRAILLECHARMAX + 1)):
-			return chr((BRAILLECHAROFFSET + value))
-		else:
-			raise InvalidBrailleCodePoint(f"{(BRAILLECHAROFFSET + value)} is not Braille codepoint!")
-	
-	def __repr__(self) -> str:
-		return f"Braille({self.matrix})"
-	
-	def __add__(self, other: 'Braille') -> 'Braille':
-		if isinstance(other, Braille):
-			result = self.codepoint + other.codepoint
-		else:
-			raise TypeError(f"{other} should be instance of `Braille`")
-		if result in BRAILLECHARRANGE:
-			return Braille(result)
-		else:
-			raise InvalidBrailleCodePoint("Result is Invalid Braille codepoint")
-	
-	def __sub__(self, other: 'Braille') -> 'Braille':
-		if isinstance(other, Braille):
-			result = self.codepoint - other.codepoint
-		else:
-			raise TypeError(f"{other} should be instance of `Braille`")
-		if result in BRAILLECHARRANGE:
-			return Braille(result)
-		else:
-			raise InvalidBrailleCodePoint("Result is Invalid Braille codepoint")
-	
-	def __pow__(self, other: 'Braille') -> 'Braille':
-		if isinstance(other, Braille):
-			result = self.codepoint ** other.codepoint
-		else:
-			raise TypeError(f"{other} should be instance of `Braille`")
-		if result in BRAILLECHARRANGE:
-			return Braille(result)
-		else:
-			raise InvalidBrailleCodePoint("Result is Invalid Braille codepoint")
-		
-	def __eq__(self, other: 'Braille') -> bool:
-		if isinstance(other, Braille):
-			return self.codepoint == other.codepoint
-		else:
-			raise TypeError(f"{other} should be instance of `Braille`")
 
-def _BRAILLE_TO_STRING(BRAILLE: Union[Braille, list]) -> str:
-	"""Converts Braille map to character"""
-	if isinstance(BRAILLE, Braille) or isinstance(BRAILLE, Braille) and hasattr(BRAILLE, 'matrix'):
-		BRAILLE_MATRIX = BRAILLE.matrix
-	elif isinstance(BRAILLE, list) and len(BRAILLE) in [3, 4] and all([len(i) == 2 for i in BRAILLE]):
-		if len(BRAILLE) == 3:
-			BRAILLE += (0, 0)
-		BRAILLE_MATRIX = BRAILLE
-	else:
-		raise TypeError("Value should be either Braille class or braille map as list")
-	lowEndian = [
-		BRAILLE_MATRIX[0][0],
-		BRAILLE_MATRIX[1][0],
-		BRAILLE_MATRIX[2][0],
-		BRAILLE_MATRIX[0][1],
-		BRAILLE_MATRIX[1][1],
-		BRAILLE_MATRIX[2][1],
-		BRAILLE_MATRIX[3][0],
-		BRAILLE_MATRIX[3][1]
-	]
-	value = 0
-	for i in range(8):
-		value += (lowEndian[i] << i)
-	return chr(BRAILLECHAROFFSET + value)
+class Braille:
+    def __init__(self, value: int = 0x2800):
+        if isinstance(value, int) and value in braille_codepoint_range:
+            self.codepoint = value
+            self.character = chr(value)
+            self.matrix = codepoint2matrix(value)
+        else:
+            raise TypeError("Value should be braille codepoint")
 
-def _BRAILLE_TO_BRAILLE_MATRIX(BRAILLE: Braille) -> list:
-	"""Converts Braille class to Braille matrix"""
-	return BRAILLE.matrix
+    @property
+    def matrix(self) -> list[int]:
+        return self.matrix
 
-def _VALUE_TO_BRAILLE_MATRIX(BRAILLE: Union[int, str]) -> list:
-	"""
-	Converts Braille character back to list
-	Credits: @xwerswoodx#4332 (Discord)
-	"""
-	if isinstance(BRAILLE, int):
-		val = BRAILLE
-	elif isinstance(BRAILLE, str):
-		val = ord(BRAILLE)
-	else:
-		raise InvalidBrailleCodePoint("This is not Braille character")
-	if val not in range(BRAILLECHAROFFSET, BRAILLECHARMAX + 1):
-		raise InvalidBrailleCodePoint("This is not Braille character")
-	temp = []
-	value = val - BRAILLECHAROFFSET
-	for i in range(7, -1, -1):
-		check = 2 ** i
-		if value >= check:
-			temp.append(1)
-			value -= check
-		else:
-			temp.append(0)
-	return [
-		[temp[7], temp[4]],
-		[temp[6], temp[3]],
-		[temp[5], temp[2]],
-		[temp[1], temp[0]]
-	]
+    @property
+    def codepoint(self) -> int:
+        return self.codepoint
 
-b2s = _BRAILLE_TO_STRING
-b2v = lambda braille: ord(b2s(braille))
-b2bm = _BRAILLE_TO_BRAILLE_MATRIX
-v2bm = _VALUE_TO_BRAILLE_MATRIX
+    @property
+    def character(self) -> str:
+        return self.character
+
+    @classmethod
+    def from_character(cls, braille_char: str):
+        return cls(ord(braille_char))
+
+    @classmethod
+    def from_matrix(cls, braille_matrx: Union[list[int], list[bool]]):
+        return cls(matrix2codepoint(braille_matrx))
+
+    def __str__(self) -> str:
+        return self.character
+
+    def __repr__(self) -> str:
+        return '<Braille character="%s" codepoint=%d/> matrix=%s' % (
+            self.character,
+            self.codepoint,
+            self.matrix,
+        )
+
+    def __eq__(
+        self, other: "Braille | Union[list[int], list[bool]] | int | str"
+    ) -> bool:
+        if isinstance(other, Braille):
+            return self.codepoint == other.codepoint
+        elif isinstance(other, int):
+            return self.codepoint == other
+        elif isinstance(other, str) and len(other) == 1:
+            return self.codepoint == ord(other)
+        elif (
+            isinstance(other, list)
+            and len(other) in [3, 4]
+            and all([len(row) == 2 for row in other])
+        ):
+            if len(other) == 3:
+                other += [[0, 0]]
+            other = [[int(col) for col in row] for row in other]
+            return self.matrix == other
+        else:
+            raise TypeError(f"{other} should be instance of `Braille`")
+
+
+def matrix2char(braille_matrix: Union[list[int], list[bool]]) -> str:
+    """Converts Braille map to character"""
+    if (
+        not isinstance(braille_matrix, list)
+        and len(braille_matrix) in [3, 4]
+        and all([len(row) == 2 for row in braille_matrix])
+    ):
+        raise TypeError("Value should be braille map as list")
+    if len(braille_matrix) == 3:
+        braille_matrix += [[0, 0]]
+    lowEndian: list[int] = [
+        [int(col) for col in row]
+        for row in [
+            braille_matrix[0][0],
+            braille_matrix[1][0],
+            braille_matrix[2][0],
+            braille_matrix[0][1],
+            braille_matrix[1][1],
+            braille_matrix[2][1],
+            braille_matrix[3][0],
+            braille_matrix[3][1],
+        ]
+    ]
+    value: int = 0
+    for val in range(8):
+        value += lowEndian[val] << val
+    if (braille_starting_codepoint + value) not in braille_codepoint_range:
+        raise InvalidBrailleCodePoint("This is not Braille's matrix")
+    return chr(braille_starting_codepoint + value)
+
+
+def matrix2codepoint(braille_matrix: Union[list[int], list[bool]]) -> int:
+    """Converts Braille map to codepoint"""
+    return ord(matrix2char(braille_matrix))
+
+
+def codepoint2matrix(
+    braille_codepoint: int, use_booleans: bool = False
+) -> Union[list[int], list[bool]]:
+    """
+    Converts Braille codepoint back to list
+    Credits: @xwerswoodx#4332 (Discord)
+    """
+    if not isinstance(braille_codepoint, str):
+        raise TypeError("'braille_codepoint' should be instance of 'int'")
+    if braille_codepoint not in braille_codepoint_range:
+        raise InvalidBrailleCodePoint("This is not Braille character")
+    temp: list = []
+    value: int = braille_codepoint - braille_starting_codepoint
+    for tmp in range(7, -1, -1):
+        check: int = 2 ** tmp
+        if value >= check:
+            temp.append(1)
+            value -= check
+        else:
+            temp.append(0)
+    result: list[int] = [
+        [temp[7], temp[4]],
+        [temp[6], temp[3]],
+        [temp[5], temp[2]],
+        [temp[1], temp[0]],
+    ]
+    if use_booleans:
+        result: list[bool] = [bool(value) for value in result]
+    return result
+
+
+def character2matrix(
+    braille_character: str, use_booleans: bool = False
+) -> Union[list[int], list[bool]]:
+    if not isinstance(braille_character, str):
+        raise TypeError("'braille_character' should be instance of str'")
+    return codepoint2matrix(ord(braille_character), use_booleans)
