@@ -23,5 +23,5 @@ setup(
     ],
     py_modules=["braille"],
     packages=find_packages(),
-    install_requires = ['typing;python_version<"3.5"'],
+    install_requires=['typing;python_version<"3.5"'],
 )
