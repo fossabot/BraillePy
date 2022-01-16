@@ -78,8 +78,8 @@ class Braille:
         return cls(ord(braille_char))
 
     @classmethod
-    def from_matrix(cls, braille_matrx: Union[list[int], list[bool]]):
-        return cls(matrix2codepoint(braille_matrx))
+    def from_matrix(cls, braille_matrix: Union[list[int], list[bool]]):
+        return cls(matrix2codepoint(braille_matrix))
 
     def __str__(self) -> str:
         return self.character
